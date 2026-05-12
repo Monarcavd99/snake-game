@@ -18,14 +18,14 @@
         }
 
         h1 {
-            font-size: 32px;
+            font-size: 36px;
             color: #00ff88;
             text-shadow: 0 0 10px #00ff88;
             margin-bottom: 10px;
         }
 
         #puntos {
-            font-size: 20px;
+            font-size: 28px;
             color: #ffffff;
             margin-bottom: 15px;
         }
@@ -86,7 +86,7 @@
 
   let serpiente, direccion, comida, puntos, jugando, intervalo;
 
-  let record = 0;
+  let record = localStorage.getItem('record') || 0;
   const recordDiv = document.getElementById('record');
 
 function sonidoComer() {
@@ -223,6 +223,7 @@ function sonidoMuerte() {
 
   if (puntos > record) {
     record = puntos;
+    localStorage.setItem('record', record);
     recordDiv.textContent = '🏆 Récord: ' + record;
   }
 
