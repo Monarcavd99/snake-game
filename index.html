@@ -245,11 +245,13 @@ let touchStartX = 0;
 let touchStartY = 0;
 
 document.addEventListener('touchstart', (e) => {
+    e.preventDefault();
     touchStartX = e.touches[0].clientX;
     touchStartY = e.touches[0].clientY;
-});
+}, { passive: false });
 
 document.addEventListener('touchend', (e) => {
+    e.preventDefault();
     const dx = e.changedTouches[0].clientX - touchStartX;
     const dy = e.changedTouches[0].clientY - touchStartY;
 
@@ -262,7 +264,7 @@ document.addEventListener('touchend', (e) => {
         if (dy > 30 && direccion.y === 0) direccion = { x: 0, y: 1 };
         if (dy < -30 && direccion.y === 0) direccion = { x: 0, y: -1 };
     }
-});
+    }, { passive: false });
 </script>
   
 </body>
