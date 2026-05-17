@@ -7,8 +7,19 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: #0a0a0a; display: flex; flex-direction: column; align-items: center; padding-top: 10px; font-family: monospace; color: white; }
         #info { display: flex; justify-content: space-between; width: 480px; margin-bottom: 10px; font-size: 16px; }
-        canvas { border: 2px solid #ffffff; display: block; width: 100%; max-width: 480px; height: auto; }
+        canvas { border: 2px solid #ffffff; display: block; width: 100%; max-width: 480px; height: auto !important; }
         #mensaje { margin-top: 15px; font-size: 22px; color: #ff4444; min-height: 30px; }
+
+    @media (max-width: 500px) {
+        canvas {
+            width: 95vw !important;
+            height: auto !important;
+        }
+        #info {
+            width: 95vw;
+            font-size: 12px;
+        }
+    }
     </style>
 </head>
 <body>
