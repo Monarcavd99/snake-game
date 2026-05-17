@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Breakout</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a0a0a; display: flex; flex-direction: column; align-items: center; padding-top: 10px; font-family: monospace; color: white; }
+        #info { display: flex; justify-content: space-between; width: 480px; margin-bottom: 10px; font-size: 16px; }
+        canvas { border: 2px solid #ffffff; display: block; }
+        #mensaje { margin-top: 15px; font-size: 22px; color: #ff4444; min-height: 30px; }
+    </style>
+</head>
+<body>
+    <div id="info">
+        <span id="score">Score: 0</span>
+        <span id="highscore">High Score: 0</span>
+        <span id="vidas">Lives: ❤️❤️❤️</span>
+    </div>
+    <canvas id="c" width="480" height="320"></canvas>
+    <button id="reiniciar" style="display:none; margin-top:15px; padding:10px 30px; font-size:18px; background:#4ecdc4; border:none; border-radius:8px; cursor:pointer;">Reiniciar</button>
+    <div id="mensaje"></div>
+    <script>
+        const canvas = document.getElementById('c');
+        const ctx = canvas.getContext('2d');
+        const scoreDiv = document.getElementById('score');
+        const highscoreDiv = document.getElementById('highscore');
+        const vidasDiv = document.getElementById('vidas');
+        const mensajeDiv = document.getElementById('mensaje');
+        const paleta = { x: 190, y: 300, w: 80, h: 10, velocidad: 6 };
+        let pelotas = [];
+        let bloquesRotos = 0;
+        let score = 0;
+        let highscore = localStorage.getItem('breakout-high') || 0;
+        let vidas = 3;
+        let jugando = false;
+        let intervalo;
+        const teclas = {};
+        document.addEventListener('keydown', (e) => teclas[e.key] = true);
+        document.addEventListener('keyup', (e) => teclas[e.key] = false);
+        const cols = 11;
+        const filaVisible = 3;
+        let nivelFila = 0;
+        let bloques = [];
+
+        function crearBloques() {
+            bloques = [];
+            nivelFila = 0;
+            for (let f = 0; f < filaVisible; f++) {
+                agregarFila(f);
+            }
+        }
+
+        function agregarFila(posY) {
+            const colores = ['#ff0000','#ff6600','#ffcc00','#00cc00','#0066ff','#9900cc'];
+            const color = colores[nivelFila % colores.length];
+            for (let c = 0; c < cols; c++) {
+                bloques.push({ x: c*43+5, y: posY*25+30, w: 40, h: 20, color: color, vivo: true });
+            }
+            nivelFila++;
+        }
+
+        function dibujar() {
+            ctx.fillStyle = '#0a0a0a';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            bloques.forEach(b => {
+                if (b.vivo) {
+                    ctx.fillStyle = b.color;
+                    ctx.fillRect(b.x, b.y, b.w, b.h);
+                }
+            });
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(paleta.x, paleta.y, paleta.w, paleta.h);
+            ctx.strokeStyle = '#ff0000';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(0, paleta.y - 20);
+            ctx.lineTo(canvas.width, paleta.y - 20);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            pelotas.forEach(p => {
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radio, 0, Math.PI * 2);
+                ctx.fillStyle = '#ffffff';
+                ctx.fill();
+                ctx.closePath();
+            });
+        }
+
+        function actualizar() {
+            if (teclas['ArrowLeft'] && paleta.x > 0) paleta.x -= paleta.velocidad;
+            if (teclas['ArrowRight'] && paleta.x + paleta.w < canvas.width) paleta.x += paleta.velocidad;
+
+            pelotas.forEach(p => {
+                p.x += p.dx;
+                p.y += p.dy;
+                if (p.x + p.radio > canvas.width || p.x - p.radio < 0) p.dx *= -1;
+                if (p.y - p.radio < 0) p.dy *= -1;
+                if (p.y + p.radio >= paleta.y &&
+                    p.y - p.radio <= paleta.y + paleta.h &&
+                    p.x >= paleta.x &&
+                    p.x <= paleta.x + paleta.w) {
+                    p.dy = -Math.abs(p.dy);
+                }
+            });
+
+            pelotas = pelotas.filter(p => p.y + p.radio < canvas.height);
+            if (pelotas.length === 0) { perderVida(); return; }
+
+            const nuevas = [];
+            pelotas.forEach(p => {
+                for (let i = 0; i < bloques.length; i++) {
+                    const b = bloques[i];
+                    if (b.vivo &&
+                        p.x + p.radio > b.x &&
+                        p.x - p.radio < b.x + b.w &&
+                        p.y + p.radio > b.y &&
+                        p.y - p.radio < b.y + b.h) {
+                        b.vivo = false;
+                        p.dy = -Math.abs(p.dy);
+                        score += 10;
+                        bloquesRotos++;
+                        scoreDiv.textContent = `Score: ${score}`;
+                        if (bloquesRotos % 4 === 0) {
+                            nuevas.push({ x: p.x, y: p.y, radio: 6, dx: -p.dx, dy: p.dy });
+                        }
+                        break;
+                    }
+                }
+            });
+            pelotas = pelotas.concat(nuevas);
+
+            const muertos = bloques.filter(b => !b.vivo).length;
+            if (muertos > 0 && muertos % cols === 0) {
+                bloques = bloques.filter(b => b.vivo);
+                bloques.forEach(b => b.y += 25);
+                agregarFila(0);
+            }
+
+            bloques.forEach(b => {
+                if (b.vivo && b.y + b.h > paleta.y - 20) {
+                    b.vivo = false;
+                    perderVida();
+                }
+            });
+
+            dibujar();
+        }
+
+        function reiniciarPelota() {
+            pelotas = [{ x: 240, y: 270, radio: 6, dx: 4, dy: -4 }];
+            bloquesRotos = 0;
+        }
+
+        function perderVida() {
+            vidas--;
+            if (vidas <= 0) {
+                terminar();
+            } else {
+                vidasDiv.textContent = 'Lives: ' + '❤️'.repeat(vidas);
+                reiniciarPelota();
+            }
+        }
+
+        function terminar() {
+            jugando = false;
+            clearInterval(intervalo);
+            if (score > highscore) {
+                highscore = score;
+                localStorage.setItem('breakout-high', highscore);
+                highscoreDiv.textContent = 'High Score:' + highscore;
+            }
+            document.getElementById('reiniciar').style.display = 'inline-block';
+            mensajeDiv.textContent = 'Game Over - Score:' + score;
+        }
+
+        function iniciar() {
+            score = 0;
+            vidas = 3;
+            jugando = true;
+            scoreDiv.textContent = 'Score: 0';
+            vidasDiv.textContent = 'Lives: ❤️❤️❤️';
+            highscoreDiv.textContent = 'High Score:' + highscore;
+            mensajeDiv.textContent = '';
+            document.getElementById('reiniciar').style.display = 'none';
+            crearBloques();
+            reiniciarPelota();
+            clearInterval(intervalo);
+            intervalo = setInterval(actualizar, 16);
+        }
+
+        document.getElementById('reiniciar').addEventListener('click', iniciar);
+        iniciar();
+    </script>
+</body>
+</html>
