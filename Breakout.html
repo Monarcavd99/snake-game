@@ -17,7 +17,7 @@
         <span id="highscore">High Score: 0</span>
         <span id="vidas">Lives: ❤️❤️❤️</span>
     </div>
-    <canvas id="c" width="480" height="320"></canvas>
+    <canvas id="c" width="480" height="320" style="border: 2px solid #ffffff; display:block; touch-action: none; width:100%; max-width:480px; height:auto;"></canvas>
     <button id="reiniciar" style="display:none; margin-top:15px; padding:10px 30px; font-size:18px; background:#4ecdc4; border:none; border-radius:8px; cursor:pointer;">Reiniciar</button>
     <div id="mensaje"></div>
     <script>
@@ -39,6 +39,16 @@
         document.addEventListener('keydown', (e) => teclas[e.key] = true);
         document.addEventListener('keyup', (e) => teclas[e.key] = false);
         const cols = 11;
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            const escala = canvas.width / rect.width;
+            const toqueX = (e.touches[0].clientX - rect.left) * escala;
+            paleta.x = toqueX - paleta.w / 2;
+            if (paleta.x < 0) paleta.x = 0;
+            if (paleta.x + paleta.w > canvas.width) paleta.x = canvas.width -paleta.w;
+        }, { passive: false });
+        
         const filaVisible = 3;
         let nivelFila = 0;
         let bloques = [];
